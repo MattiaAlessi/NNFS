@@ -56,28 +56,6 @@ class Activation_Softmax:
             self.dinputs[index] = np.dot(jacobian_matrix, single_dvalues)
 
 
-class Activation_Softmax_Loss_CategoricalCrossentropy():
-    def __init__(self):
-        self.activation = Activation_Softmax()
-        self.loss = Loss_CategoricalCrossentropy()
-        
-        
-    def forward(self, inputs, y_true):
-        self.activation.forward(inputs)
-        self.output = self.activation.output
-        
-        return self.loss.calculate(self.output, y_true)
-    
-    def backward(self, dvalues, y_true):
-        samples = len(dvalues)
-        
-        if len(y_true.shape) == 2:
-            y_true = np.argmax(y_true, axis = 1)
-        
-        self.dinputs = dvalues.copy()
-        self.dinputs[range(samples), y_true] -= 1
-        self.dinputs = self.dinputs / samples
-
 
 class Loss:
     """this class is the loss function of the neural network, it is a base class that will be inherited by the specific loss functions"""
@@ -112,9 +90,51 @@ class Loss_CategoricalCrossentropy(Loss):
         self.dinputs = self.dinputs / samples
 
 
+
+class Activation_Softmax_Loss_CategoricalCrossentropy():
+    def __init__(self):
+        self.activation = Activation_Softmax()
+        self.loss = Loss_CategoricalCrossentropy()
+        
+        
+    def forward(self, inputs, y_true):
+        self.activation.forward(inputs)
+        self.output = self.activation.output
+        
+        return self.loss.calculate(self.output, y_true)
+    
+    def backward(self, dvalues, y_true):
+        samples = len(dvalues)
+        
+        if len(y_true.shape) == 2:
+            y_true = np.argmax(y_true, axis = 1)
+        
+        self.dinputs = dvalues.copy()
+        self.dinputs[range(samples), y_true] -= 1
+        self.dinputs = self.dinputs / samples
+
+
+
+
 class Optimizer_SDG:
-    def __init__(self, learning_rate = 1.0):
+    def __init__(self, learning_rate = 1., decay=0.):
         self.learning_rate = learning_rate
+        self.current_learning_rate = learning_rate
+        self.decay = decay
+        self.iterations = 0
+        
+    def pre_update_params(self):
+        if self.decay:
+            self.current_learning_rate = self.learning_rate * (1. / (1. + self.decay * self.iterations))
+    
+    def update_params(self, layer):
+        layer.weights += -self.current_learning_rate * layer.dweights
+        layer.biases += -self.current_learning_rate * layer.dbiases
+        
+    def post_update_params(self):
+        self.iterations += 1
+        
+    
         
     def update_params(self, layer):
         layer.weights += -self.learning_rate * layer.dweights
@@ -133,14 +153,14 @@ class Optimizer_SDG:
 if __name__ == "__main__":
     X, y = spiral_data(samples=100, classes=3)
 
-    dense1 = Layer_Dense(2, 3)
+    dense1 = Layer_Dense(2, 64)
     activation1 = Activation_ReLU() 
 
-    dense2 = Layer_Dense(3, 3)
+    dense2 = Layer_Dense(64, 3)
     loss_activation = Activation_Softmax_Loss_CategoricalCrossentropy()
 
 
-    optimizer = Optimizer_SDG()
+    optimizer = Optimizer_SDG(decay=1e-2)
     
     
     for epoch in range(10001):
@@ -162,8 +182,8 @@ if __name__ == "__main__":
             y = np.argmax(y, axis=1)
         accuracy = np.mean(predictions==y)
 
-        if epoch % 100 == 0:
-            print(f"Epoch --> {epoch}\nLoss: {loss}     Accuracy: {accuracy}")
+        if not epoch % 100:
+            print(f"Epoch --> {epoch}, accuracy: {accuracy:.3f}, loss: {loss:.3f}, learning rate: {optimizer.current_learning_rate}")
 
 
         #backward pass
@@ -174,8 +194,10 @@ if __name__ == "__main__":
 
         
         #update of weights and biases
+        optimizer.pre_update_params()
         optimizer.update_params(dense1)
         optimizer.update_params(dense2)
+        optimizer.post_update_params()
 
     # print(dense1.dweights)
     # print(dense1.dbiases)
