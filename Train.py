@@ -730,13 +730,5 @@ fashion_mnist_labels = {
     9: 'Ankle boot'
 }
 
-image_data = cv2.imread('pants.png', cv2.IMREAD_GRAYSCALE)
-image_data = cv2.resize(image_data, (28, 28))
-image_data = 255 - image_data
-image_data = (image_data.reshape(1, -1).astype(np.float32) - 127.5) / 127.5
 
 model = Model.load('fashion_mnist.model')
-confidences = model.predict(image_data)
-predictions = model.output_layer_activation.predictions(confidences)
-prediction = fashion_mnist_labels[predictions[0]]
-print(prediction)
