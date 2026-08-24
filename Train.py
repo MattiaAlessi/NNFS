@@ -4,6 +4,10 @@ import os
 import cv2
 import pickle
 import copy
+import argparse
+import urllib.request
+from zipfile import ZipFile
+from pathlib import Path
 
 nnfs.init()
 
@@ -667,26 +671,48 @@ def load_mnist_dataset(dataset, path):
 
     return np.array(X), np.array(y).astype('uint8')
 
+
 def create_data_mnist(path):
     X, y = load_mnist_dataset('train', path)
     X_test, y_test = load_mnist_dataset('test', path)
     return X, y, X_test, y_test
 
 
+def ensure_dataset(data_dir):
+    """Download and extract Fashion-MNIST when it is not present."""
+    data_dir = Path(data_dir)
+    dataset_dir = data_dir / 'fashion_mnist_images'
+    archive_path = data_dir / 'fashion_mnist_images.zip'
+
+    if (dataset_dir / 'train').is_dir() and (dataset_dir / 'test').is_dir():
+        return dataset_dir
+
+    data_dir.mkdir(parents=True, exist_ok=True)
+    if not archive_path.is_file():
+        print('Downloading Fashion-MNIST dataset...')
+        urllib.request.urlretrieve(
+            'https://nnfs.io/datasets/fashion_mnist_images.zip', archive_path
+        )
+
+    print('Extracting Fashion-MNIST dataset...')
+    with ZipFile(archive_path) as zip_images:
+        zip_images.extractall(dataset_dir)
+    return dataset_dir
 
 
+def main():
+    parser = argparse.ArgumentParser(description='Train a Fashion-MNIST neural network.')
+    parser.add_argument('--data-dir', default='.', help='Directory for the dataset.')
+    parser.add_argument('--output', default='fashion_mnist.model', help='Output model path.')
+    parser.add_argument('--epochs', type=int, default=10, help='Number of training epochs.')
+    parser.add_argument('--batch-size', type=int, default=128, help='Training batch size.')
+    args = parser.parse_args()
 
+    print('Start')
+    dataset_dir = ensure_dataset(args.data_dir)
+    X, y, X_test, y_test = create_data_mnist(str(dataset_dir))
 
-
-
-
-
-
-if __name__ == "__main__":
-    print("Start")
-    X, y, X_test, y_test = create_data_mnist('fashion_mnist_images')
-
-    print("Reshape")
+    print('Reshape')
     keys = np.array(range(X.shape[0]))
     np.random.shuffle(keys)
     X = X[keys]
@@ -695,7 +721,7 @@ if __name__ == "__main__":
     X = (X.reshape(X.shape[0], -1).astype(np.float32) - 127.5) / 127.5
     X_test = (X_test.reshape(X_test.shape[0], -1).astype(np.float32) - 127.5) / 127.5
 
-    print("Load Model")
+    print('Load Model')
     model = Model()
 
     model.add(Layer_Dense(X.shape[1], 128))
@@ -705,30 +731,29 @@ if __name__ == "__main__":
     model.add(Layer_Dense(128, 10))
     model.add(Activation_Softmax())
 
-    model.set(loss=Loss_CategoricalCrossentropy(), 
-              optimizer=Optimizer_Adam(decay=1e-3), 
-              accuracy=Accuracy_Categorical())
+    model.set(
+        loss=Loss_CategoricalCrossentropy(),
+        optimizer=Optimizer_Adam(decay=1e-3),
+        accuracy=Accuracy_Categorical()
+    )
 
-    print("Finalize Model")
+    print('Finalize Model')
     model.finalize()
 
-    print("Train the model")
-    model.train(X, y, validation_data=(X_test, y_test), epochs=10, batch_size=128, print_every=100)
+    print('Train the model')
+    model.train(
+        X,
+        y,
+        validation_data=(X_test, y_test),
+        epochs=args.epochs,
+        batch_size=args.batch_size,
+        print_every=100
+    )
 
-    model.save('fashion_mnist.model')
-
-fashion_mnist_labels = {
-    0: 'T-shirt/top',
-    1: 'Trouser',
-    2: 'Pullover',
-    3: 'Dress',
-    4: 'Coat',
-    5: 'Sandal',
-    6: 'Shirt',
-    7: 'Sneaker',
-    8: 'Bag',
-    9: 'Ankle boot'
-}
+    model.save(args.output)
+    print(f'Model saved to {args.output}')
 
 
-model = Model.load('fashion_mnist.model')
+if __name__ == '__main__':
+    main()
+

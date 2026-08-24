@@ -6,30 +6,71 @@ A minimal neural network framework built entirely from scratch in Python using o
 
 | File | Description |
 |------|-------------|
-| `p1.py` – `p7.py` | Progressive exercises covering layers, activations, and loss functions |
 | `EXTRACT_DATASET.py` | Downloads and extracts the Fashion MNIST dataset |
-| `Train.py` | Full framework (layers, optimizers, losses, accuracy) + training pipeline |
+| `Train.py` | Full framework and training pipeline |
+| `build_exe.bat` | Builds the Windows executable locally |
+| `.github/workflows/build-windows.yml` | Builds and publishes tagged Windows releases |
 
-## Features
+## Requirements
 
-- **Dense layers** with L1/L2 regularization
-- **Activations:** ReLU, Softmax, Sigmoid, Linear
-- **Optimizers:** SGD, Adagrad, RMSprop, Adam (with learning rate decay)
-- **Losses:** Categorical Cross-Entropy, Binary Cross-Entropy, MSE, MAE
-- **Dropout** regularization
-- Model **save/load** via pickle
+For Python development:
 
-## Usage
+```text
+numpy
+nnfs
+opencv-python
+pyinstaller
+```
 
-1. **Extract the dataset:**
-   ```bash
-   python EXTRACT_DATASET.py
-   ```
+Install them with:
 
-2. **Train the model:**
-   ```bash
-   python Train.py
-   ```
+```bash
+python -m pip install -r requirements.txt
+```
+
+## Run from source
+
+```bash
+python Train.py --epochs 10 --batch-size 128
+```
+
+The dataset is downloaded automatically the first time. You can also download it explicitly:
+
+```bash
+python EXTRACT_DATASET.py
+```
+
+## Build the Windows `.exe`
+
+On Windows, after installing the requirements:
+
+```bat
+build_exe.bat
+```
+
+The result is `dist\fashion-mnist-trainer.exe`. The executable downloads Fashion-MNIST automatically when started, so the dataset does not need to be bundled into the binary.
+
+Options:
+
+```text
+fashion-mnist-trainer.exe --epochs 10 --batch-size 128 --output fashion_mnist.model
+```
+
+The training process may take a long time and requires an internet connection on the first run.
+
+## Publish a GitHub Release automatically
+
+The workflow in `.github/workflows/build-windows.yml` runs when you push a tag beginning with `v`, builds the `.exe` on a Windows runner, and attaches it to a GitHub Release.
+
+```bash
+git add .
+git commit -m "Package Windows trainer release"
+git push origin master
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+After the tag is pushed, open the repository's **Releases** page. GitHub Actions will publish `fashion-mnist-trainer.exe` as a release asset.
 
 ## Fashion MNIST Classes
 
@@ -45,14 +86,6 @@ A minimal neural network framework built entirely from scratch in Python using o
 | 7 | Sneaker |
 | 8 | Bag |
 | 9 | Ankle boot |
-
-## Requirements
-
-```
-numpy
-nnfs
-opencv-python
-```
 
 ## References
 
