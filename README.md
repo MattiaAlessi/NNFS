@@ -40,6 +40,39 @@ The dataset is downloaded automatically the first time. You can also download it
 python EXTRACT_DATASET.py
 ```
 
+## Run inference with a trained model
+
+After training, the model is saved as a pickle file (default: `fashion_mnist.model`). Because the pickle stores the full model object, you must import the framework from `Train.py` before loading it:
+
+```python
+from Train import Model
+import cv2
+import numpy as np
+
+model = Model.load('fashion_mnist.model')
+
+# Load a 28x28 grayscale image and preprocess it exactly like during training
+image_data = cv2.imread('my_image.png', cv2.IMREAD_GRAYSCALE)
+X = (image_data.reshape(1, -1).astype(np.float32) - 127.5) / 127.5
+
+predictions = model.predict(X)
+print('Predicted class:', predictions.argmax(axis=-1)[0])
+```
+
+The predicted integer maps to a class in the table below.
+
+To evaluate accuracy on the test set instead:
+
+```python
+from Train import Model, ensure_dataset, create_data_mnist
+
+model = Model.load('fashion_mnist.model')
+dataset_dir = ensure_dataset('.')
+_, _, X_test, y_test = create_data_mnist(str(dataset_dir))
+X_test = (X_test.reshape(X_test.shape[0], -1).astype(np.float32) - 127.5) / 127.5
+model.evaluate(X_test, y_test, batch_size=128)
+```
+
 ## Build the Windows `.exe`
 
 On Windows, after installing the requirements:
@@ -58,19 +91,6 @@ fashion-mnist-trainer.exe --epochs 10 --batch-size 128 --output fashion_mnist.mo
 
 The training process may take a long time and requires an internet connection on the first run.
 
-## Publish a GitHub Release automatically
-
-The workflow in `.github/workflows/build-windows.yml` runs when you push a tag beginning with `v`, builds the `.exe` on a Windows runner, and attaches it to a GitHub Release.
-
-```bash
-git add .
-git commit -m "Package Windows trainer release"
-git push origin master
-git tag v1.0.0
-git push origin v1.0.0
-```
-
-After the tag is pushed, open the repository's **Releases** page. GitHub Actions will publish `fashion-mnist-trainer.exe` as a release asset.
 
 ## Fashion MNIST Classes
 
