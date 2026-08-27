@@ -1,10 +1,15 @@
 import numpy as np
 import nnfs
 import os
+import sys
+import time
+import socket
 import cv2
 import pickle
 import copy
 import argparse
+import zipfile
+import urllib.error
 import urllib.request
 from zipfile import ZipFile
 from pathlib import Path
@@ -678,25 +683,80 @@ def create_data_mnist(path):
     return X, y, X_test, y_test
 
 
+DATASET_URL = 'https://nnfs.io/datasets/fashion_mnist_images.zip'
+
+
+def _download_progress_hook(block_num, block_size, total_size):
+    downloaded = block_num * block_size
+    if total_size > 0:
+        shown = min(downloaded, total_size)
+        sys.stdout.write(
+            f'\rDownloading... {shown / (1024 * 1024):.1f} / {total_size / (1024 * 1024):.1f} MB'
+            f' ({100 * shown // total_size}%)'
+        )
+    else:
+        sys.stdout.write(f'\rDownloading... {downloaded / (1024 * 1024):.1f} MB')
+    sys.stdout.flush()
+
+
+def _extract_dataset(archive_path, dataset_dir):
+    print(f'Extracting Fashion-MNIST dataset to {dataset_dir}...', flush=True)
+    start_time = time.time()
+    try:
+        with ZipFile(archive_path) as zip_images:
+            members = zip_images.infolist()
+            total_files = len(members)
+            print(f'Archive contains {total_files} files.', flush=True)
+            for count, member in enumerate(members, 1):
+                zip_images.extract(member, dataset_dir)
+                if count % 2000 == 0 or count == total_files:
+                    elapsed = time.time() - start_time
+                    rate = count / elapsed if elapsed > 0 else 0.0
+                    remaining = (total_files - count) / rate if rate > 0 else 0.0
+                    percent = 100 * count // total_files if total_files else 100
+                    print(
+                        f'Extracted {count}/{total_files} files ({percent}%) - '
+                        f'{elapsed:.0f}s elapsed, ~{remaining:.0f}s remaining',
+                        flush=True,
+                    )
+    except zipfile.BadZipFile:
+        archive_path.unlink(missing_ok=True)
+        raise SystemExit(
+            'The dataset archive is corrupted (probably an interrupted download).\n'
+            'It has been deleted - run the program again to re-download it.'
+        )
+    print(f'Extraction finished in {time.time() - start_time:.1f}s.', flush=True)
+
+
 def ensure_dataset(data_dir):
-    """Download and extract Fashion-MNIST when it is not present."""
     data_dir = Path(data_dir)
     dataset_dir = data_dir / 'fashion_mnist_images'
     archive_path = data_dir / 'fashion_mnist_images.zip'
 
     if (dataset_dir / 'train').is_dir() and (dataset_dir / 'test').is_dir():
+        print(f'Dataset already present in {dataset_dir}.', flush=True)
         return dataset_dir
 
     data_dir.mkdir(parents=True, exist_ok=True)
-    if not archive_path.is_file():
-        print('Downloading Fashion-MNIST dataset...')
-        urllib.request.urlretrieve(
-            'https://nnfs.io/datasets/fashion_mnist_images.zip', archive_path
-        )
 
-    print('Extracting Fashion-MNIST dataset...')
-    with ZipFile(archive_path) as zip_images:
-        zip_images.extractall(dataset_dir)
+    if not archive_path.is_file():
+        print(f'Downloading Fashion-MNIST dataset from {DATASET_URL}...', flush=True)
+        socket.setdefaulttimeout(60)  # fail instead of hanging forever on a stalled connection
+        try:
+            urllib.request.urlretrieve(DATASET_URL, archive_path, reporthook=_download_progress_hook)
+        except OSError as exc:
+            archive_path.unlink(missing_ok=True)
+            raise SystemExit(
+                f'Download failed: {exc}\n'
+                'The partial file was deleted - run the program again to retry.'
+            )
+        sys.stdout.write('\n')
+        sys.stdout.flush()
+        print(f'Download finished ({archive_path.stat().st_size / (1024 * 1024):.1f} MB).', flush=True)
+    else:
+        print(f'Using existing archive {archive_path} ({archive_path.stat().st_size / (1024 * 1024):.1f} MB).', flush=True)
+
+    _extract_dataset(archive_path, dataset_dir)
     return dataset_dir
 
 
