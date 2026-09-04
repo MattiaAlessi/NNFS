@@ -1,55 +1,63 @@
 # Neural Network from Scratch
 
-A minimal neural network framework built entirely from scratch in Python using only NumPy, then applied to the **Fashion MNIST** image classification task.
+A neural network framework that has been built entirely from scratch in python (inspired by:[NNFS](https://nnfs.io/) course).
+This project also include scripts that downloads a dataset and permits to try it yourself using the **Fashion MNIST** image classification.
 
-## Project Structure
+## Project Structure:
+```text
+NeuralNetworkFromScratch
+├── Train.py                    # main script
+├── EXTRACT_DATASET.py          # download and extract dataset
+├── build_exe.bat               # build the .exe (windows only)
+├── requirements.txt            # Python dependencies
+└── README.md                   # Project documentation
+└── .gitignore                  # Ignore List
+└── .github
+    └── workflows
+        └── build-windows.yml   # Create the github release
+```
 
-| File | Description |
-|------|-------------|
-| `EXTRACT_DATASET.py` | Downloads and extracts the Fashion MNIST dataset |
-| `Train.py` | Full framework and training pipeline |
-| `build_exe.bat` | Builds the Windows executable locally |
-| `.github/workflows/build-windows.yml` | Builds and publishes tagged Windows releases |
+## Clone Repo:
+
+```bash
+git clone https://github.com/MattiaAlessi/NNFS.git
+```
 
 ## Requirements
 
-For Python development:
-
-```text
-numpy
-nnfs
-opencv-python
-pyinstaller
-```
-
-Install them with:
+- No requirement is needed if you're using the .exe in the [release page](https://github.com/MattiaAlessi/NNFS/releases)
+- If you wanna try building a neural network with this framework (source code) install the dependencis with:
 
 ```bash
-python -m pip install -r requirements.txt
+pip install -r requirements.txt
 ```
 
-## Run from source
+# How to use:
+## Run from source code
 
 ```bash
 python Train.py --epochs 10 --batch-size 128
 ```
 
-The dataset is downloaded automatically the first time. You can also download it explicitly:
+**The dataset is downloaded automatically the first time you run the program. You can also download it manually by running this file with the command:**
 
 ```bash
 python EXTRACT_DATASET.py
 ```
 
-## Run inference with a trained model
+## How to run a trained model?
 
-After training, the model is saved as a pickle file (default: `fashion_mnist.model`). Because the pickle stores the full model object, you must import the framework from `Train.py` before loading it:
+All models are saved as a pickle file by default as `fashion_mnist.model`
+You can import the Model class from `Train.py` to use the NN.
+
+**EXAMPLE:**
 
 ```python
 from Train import Model
 import cv2
 import numpy as np
 
-model = Model.load('fashion_mnist.model')
+model = Model.load('fashion_mnist.model') #default model
 
 # Load a 28x28 grayscale image and preprocess it exactly like during training
 image_data = cv2.imread('my_image.png', cv2.IMREAD_GRAYSCALE)
@@ -59,9 +67,7 @@ predictions = model.predict(X)
 print('Predicted class:', predictions.argmax(axis=-1)[0])
 ```
 
-The predicted integer maps to a class in the table below.
-
-To evaluate accuracy on the test set instead:
+To evaluate accuracy:
 
 ```python
 from Train import Model, ensure_dataset, create_data_mnist
@@ -73,15 +79,11 @@ X_test = (X_test.reshape(X_test.shape[0], -1).astype(np.float32) - 127.5) / 127.
 model.evaluate(X_test, y_test, batch_size=128)
 ```
 
-## Build the Windows `.exe`
+If you wanna build the `.exe` just run:
 
-On Windows, after installing the requirements:
-
-```bat
-build_exe.bat
+```bash
+.\build_exe.bat
 ```
-
-The result is `dist\fashion-mnist-trainer.exe`. The executable downloads Fashion-MNIST automatically when started, so the dataset does not need to be bundled into the binary.
 
 Options:
 
@@ -89,7 +91,7 @@ Options:
 fashion-mnist-trainer.exe --epochs 10 --batch-size 128 --output fashion_mnist.model
 ```
 
-The training process may take a long time and requires an internet connection on the first run.
+The training process may take a long time and requires an internet connection on the first run to install from internet the images.
 
 
 ## Fashion MNIST Classes
