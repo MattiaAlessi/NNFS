@@ -1,49 +1,59 @@
 # Neural Network from Scratch
 
-A neural network framework that has been built entirely from scratch in python (inspired by:[NNFS](https://nnfs.io/) course).
-This project also include scripts that downloads a dataset and permits to try it yourself using the **Fashion MNIST** image classification.
 
-## Project Structure:
-```text
-NeuralNetworkFromScratch
-├── Train.py                    # main script
-├── EXTRACT_DATASET.py          # download and extract dataset
-├── build_exe.bat               # build the .exe (windows only)
-├── requirements.txt            # Python dependencies
-└── README.md                   # Project documentation
-└── .gitignore                  # Ignore List
-└── .github
-    └── workflows
-        └── build-windows.yml   # Create the github release
-```
+This project is a tiny neural network framework written in pure Python (no black boxes). You can train it to recognise clothes from the Fashion MNIST dataset or with any other dataset!!!
 
-## Clone Repo:
+(P.S. this has been inspired by the: [NNFS](https://nnfs.io/) course).   
+(P.P.S. there are scripts that downloads automatically the dataset used in the framework)
+
+
+
+# How to use
+
+## 1. Clone the Repo:
 
 ```bash
 git clone https://github.com/MattiaAlessi/NNFS.git
 ```
 
-## Requirements
-
-- No requirement is needed if you're using the .exe in the [release page](https://github.com/MattiaAlessi/NNFS/releases)
-- If you wanna try building a neural network with this framework (source code) install the dependencis with:
+## 2. Install requirements
 
 ```bash
 pip install -r requirements.txt
 ```
 
-# How to use:
-## Run from source code
+
+## 3. Run from source code
 
 ```bash
 python Train.py --epochs 10 --batch-size 128
 ```
 
-**The dataset is downloaded automatically the first time you run the program. You can also download it manually by running this file with the command:**
+### What Do Those Options Mean?
 
+- --epochs : how many times the network sees the whole dataset. More = smarter, but slower.
+
+- --batch-size : how many images it looks at before updating its “brain”. Bigger values = more stable learning, but need more memory.
+
+IN SHORT:  
+`+` epochs = slower but smarter  
+`+` batch-size = learning more stable but more memory needed
+
+**IF THE DATASET ISN'T DOWNLOADED USE:**
 ```bash
 python EXTRACT_DATASET.py
 ```
+
+
+## How it really works?
+
+1) The program takes each **28×28 pixel image** (grayscaled by the code) and flattens it into a long list of numbers.
+
+2) These numbers pass through several “**layers**” that learn to spot patterns (like edges, shapes, etc.).
+
+3) At the end, the network gives a score for each of the 10 clothing types and picks the highest one.
+
+
 
 ## How to run a trained model?
 
@@ -93,6 +103,15 @@ fashion-mnist-trainer.exe --epochs 10 --batch-size 128 --output fashion_mnist.mo
 
 The training process may take a long time and requires an internet connection on the first run to install from internet the images.
 
+## What Can I Do With the Trained Model?
+
+Just have fun and use your creativity...
+
+- Test it with your own images (take a photo of a piece of clothing, resize it to 28×28, and see if the model guesses right)
+
+- Tweak the code (add an extra layer, change the activation function, and see how the results change)
+
+- Compare (see if normalising the data really helps)
 
 ## Fashion MNIST Classes
 
@@ -111,4 +130,4 @@ The training process may take a long time and requires an internet connection on
 
 ## References
 
-Built following the [Neural Networks from Zero to Hero](https://nnfs.io/) course.
+This project was built while following the awesome [Neural Networks from Zero to Hero](https://nnfs.io/) course on which I've added my own twiks, if you like drop a star on github, it really means a lot to me.
